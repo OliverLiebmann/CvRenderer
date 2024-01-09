@@ -37,9 +37,10 @@ resource "aws_lambda_function" "cv_renderer" {
   filename      = "build/CvRenderer-${var.lambda-version}.jar"
   function_name = "cv-renderer"
   role          = aws_iam_role.cv_renderer_role.arn
-  handler       = "CvRenderer::handleRequest"
+  handler       = "DownloadFileHandler::handleRequest"
   runtime       = "java21"
   timeout       = 300
+  memory_size = 256
   environment {}
 }
 
@@ -71,6 +72,7 @@ resource "aws_iam_role_policy" "cv_renderer_role_policy" {
 resource "aws_api_gateway_rest_api" "cv_renderer_api" {
   name        = "CvRendererAPI"
   description = "API for CV Renderer Lambda Function"
+  binary_media_types = ["*/*"]
 }
 
 # API Gateway Resource
@@ -106,6 +108,7 @@ resource "aws_api_gateway_integration" "lambda_integration" {
   http_method = aws_api_gateway_method.cv_renderer_method.http_method
 
   integration_http_method = "POST"
+  content_handling = "CONVERT_TO_BINARY"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.cv_renderer.invoke_arn
 }
